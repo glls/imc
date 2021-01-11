@@ -79,8 +79,8 @@ class ImcModelIssue extends JModelItem {
                 // Convert the JTable to a clean JObject.
                 $properties = $table->getProperties(1);
                 $this->_item = JArrayHelper::toObject($properties, 'JObject');
-            } elseif ($error = $table->getError()) {
-                $this->setError($error);
+            } else {
+                JError::raiseError(404, "Not found");
             }
         }
 
@@ -108,7 +108,12 @@ class ImcModelIssue extends JModelItem {
                 else
                     $this->_item->category_image = '';
 
-                $this->_item->catid_title = $category->title;
+                if(isset($prms->imc_category_usergroup))
+                    $this->_item->imc_category_usergroup = $prms->imc_category_usergroup;
+                else
+                    $this->_item->imc_category_usergroup = array();
+
+                $this->_item->catid_title = $category->title;               
             } else {
                 $this->_item->category_image = '';
                 $this->_item->catid_title = 'CATEGORY IS NO LONGER PUBLISHED';
@@ -182,6 +187,23 @@ class ImcModelIssue extends JModelItem {
         return true;
     }
 
+	public function hit($pk = 0)
+	{
+		$pk = (!empty($pk)) ? $pk : (int) $id = $this->getState('issue.id');
+		$db = $this->getDbo();
+		$db->setQuery(
+				'UPDATE #__imc_issues' .
+				' SET hits = hits + 1' .
+				' WHERE id = '.(int) $pk
+		);
+		if (!$db->query()) {
+				$this->setError($db->getErrorMsg());
+				return false;
+		}
+        
+		return true;
+    }
+        
     public function publish($id, $state) {
         $table = $this->getTable();
         $table->load($id);

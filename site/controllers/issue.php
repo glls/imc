@@ -46,7 +46,7 @@ class ImcControllerIssue extends ImcController {
         }
 
         // Redirect to the edit screen.
-        $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issueform&layout=edit', false));
+        $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issueform&id='.$editId, false));
     }
 
     /**
@@ -93,6 +93,8 @@ class ImcControllerIssue extends ImcController {
         }
     }
 
+    /* depracated */
+    /*
     public function remove() {
 
         // Initialise variables.
@@ -136,5 +138,6 @@ class ImcControllerIssue extends ImcController {
             throw new Exception(500);
         }
     }
+    */
 
 }

@@ -14,8 +14,7 @@ class MCrypt
     private $iv;
 
     public function __construct()
-    {
-    }
+    { }
 
     /**
      * @param mixed $key 16 chars
@@ -26,23 +25,24 @@ class MCrypt
         $this->iv = $key;
     }
 
-    public function encrypt($str) 
-    {	
-        if ($m = strlen($str)%8){
-            $str .= str_repeat("\x00",  8 - $m);	
-        }
-        $openssl = openssl_encrypt($str, 'AES-128-CBC', $this->key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING, $this->iv);
+    public function encrypt($str)
+    {
+        // if ($m = strlen($str) % 8) {
+        //     $str .= str_repeat("\x00",  8 - $m);
+        // }
+        $openssl = openssl_encrypt($str, 'AES-128-CBC', $this->key, 0, $this->iv);
         return bin2hex($openssl);
     }
-  
+
     public function decrypt($code)
     {
         $code = $this->hex2bin($code);
-        $decrypted = openssl_decrypt($code, 'AES-128-CBC', $this->key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING, $this->iv);
+        $decrypted = openssl_decrypt($code, 'AES-128-CBC', $this->key, 0, $this->iv);
         return utf8_encode(trim($decrypted));
     }
 
-    protected function hex2bin($hexdata) {
+    protected function hex2bin($hexdata)
+    {
         $bindata = '';
         for ($i = 0; $i < strlen($hexdata); $i += 2) {
             $bindata .= chr(hexdec(substr($hexdata, $i, 2)));
@@ -50,7 +50,8 @@ class MCrypt
         return $bindata;
     }
 
-    public function generateRandomString($length = 10) {
+    public function generateRandomString($length = 10)
+    {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
         $randomString = '';

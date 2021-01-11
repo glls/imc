@@ -19,38 +19,6 @@ JPluginHelper::importPlugin('imc');
 class ImcControllerIssueForm extends ImcController {
 
     /**
-     * Method to check out an item for editing and redirect to the edit form.
-     *
-     * @since	1.6
-     */
-    public function edit() {
-        $app = JFactory::getApplication();
-
-        // Get the previous edit id (if any) and the current edit id.
-        $previousId = (int) $app->getUserState('com_imc.edit.issue.id');
-        $editId = JFactory::getApplication()->input->getInt('id', null, 'array');
-
-        // Set the user id for the user to edit in the session.
-        $app->setUserState('com_imc.edit.issue.id', $editId);
-
-        // Get the model.
-        $model = $this->getModel('IssueForm', 'ImcModel');
-
-        // Check out the item
-        if ($editId) {
-            $model->checkout($editId);
-        }
-
-        // Check in the previous user.
-        if ($previousId) {
-            $model->checkin($previousId);
-        }
-
-        // Redirect to the edit screen.
-        $this->setRedirect(JRoute::_('index.php?option=com_imc&id=&view=issue&layout=edit', false));
-    }
-
-    /**
      * Method to save a user's profile data.
      *
      * @return	void
@@ -99,7 +67,7 @@ class ImcControllerIssueForm extends ImcController {
 
             // Redirect back to the edit screen.
             $id = (int) $app->getUserState('com_imc.edit.issue.id');
-            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issueform&layout=edit&id=' . $id, false));
+            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issueform&id=' . $id, false));
             return false;
         }
 
@@ -114,7 +82,7 @@ class ImcControllerIssueForm extends ImcController {
             // Redirect back to the edit screen.
             $id = (int) $app->getUserState('com_imc.edit.issue.id');
             $this->setMessage(JText::sprintf('Save failed', $model->getError()), 'warning');
-            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issueform&layout=edit&id=' . $id, false));
+            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issueform&id=' . $id, false));
             return false;
         }
 
@@ -202,7 +170,7 @@ class ImcControllerIssueForm extends ImcController {
 
             // Redirect back to the edit screen.
             $id = (int) $app->getUserState('com_imc.edit.issue.id');
-            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issue&layout=edit&id=' . $id, false));
+            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issue&id=' . $id, false));
             return false;
         }
 
@@ -217,7 +185,7 @@ class ImcControllerIssueForm extends ImcController {
             // Redirect back to the edit screen.
             $id = (int) $app->getUserState('com_imc.edit.issue.id');
             $this->setMessage(JText::sprintf('Delete failed', $model->getError()), 'warning');
-            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issue&layout=edit&id=' . $id, false));
+            $this->setRedirect(JRoute::_('index.php?option=com_imc&view=issue&id=' . $id, false));
             return false;
         }
 
@@ -265,6 +233,7 @@ class ImcControllerIssueForm extends ImcController {
             $data2['created_by'] = $validData['created_by'];
             $data2['updated'] = $validData['created'];
             $data2['language'] = $validData['language'];
+            $data2['catid'] = $validData['catid'];
             if(isset($data2['rules']))
             {
                 $data2['rules'] = $validData['rules'];
@@ -280,10 +249,59 @@ class ImcControllerIssueForm extends ImcController {
                 JFactory::getApplication()->enqueueMessage('Cannot save data to log table', 'error'); 
             }
 
+            //B: move any images only if record is new
+            //check if any files uploaded
+            $obj = json_decode( $validData['photo'] );
+            if(!empty($obj->files)){
+
+
+                $srcDir = JPATH_ROOT . '/' . $obj->imagedir . '/' . $obj->id;
+                $dstDir = JPATH_ROOT . '/' . $obj->imagedir . '/' . $insertid;
+                $success = rename ( $srcDir , $dstDir );
+
+                if($success){
+                    //update photo json isnew, id
+                    unset($obj->isnew);
+
+                    //update files url
+                    foreach ($obj->files as &$file)
+                    {
+                        $file->url = str_replace($obj->id, $insertid, $file->url);
+                        $file->mediumUrl = str_replace($obj->id, $insertid, $file->mediumUrl);
+                        $file->thumbnailUrl = str_replace($obj->id, $insertid, $file->thumbnailUrl);
+                    }
+                    //update id
+                    $obj->id = $insertid;
+
+                    $photo = json_encode($obj);
+
+                    // Create an object for the record we are going to update.
+                    $object = new stdClass();
+                    $object->id = $insertid;
+                    $object->photo = $photo;
+
+                    $validData['photos_files'] = $obj;
+                    // Update photo
+                    $result = JFactory::getDbo()->updateObject('#__imc_issues', $object, 'id');
+
+                }
+                else {
+                    JFactory::getApplication()->enqueueMessage('Cannot move '.$srcDir.' to '.$dstDir.'. Check folder rights', 'error'); 
+                }
+
+            }    
+
             $dispatcher = JEventDispatcher::getInstance();
             $results = $dispatcher->trigger( 'onAfterNewIssueAdded', array( $model, $validData, $insertid ) );            
         }
         else {
+
+            //get photos as well
+            $obj = json_decode( $validData['photo'] );
+            if(!empty($obj->files)){
+                $photo = json_encode($obj);
+                $validData['photos_files'] = $obj;
+            }    
 
             //a. check for step modification
             if(isset($validData['is_step_modified']) && $validData['is_step_modified'] === 'true'){
@@ -300,6 +318,7 @@ class ImcControllerIssueForm extends ImcController {
                 $data2['created_by'] = $user->id;
                 $data2['updated'] = $validData['updated'];
                 $data2['language'] = $validData['language'];
+                $data2['catid'] = $validData['catid'];
                 if(isset($data2['rules']))
                 {
                     $data2['rules'] = $validData['rules'];
@@ -335,6 +354,7 @@ class ImcControllerIssueForm extends ImcController {
                 $data2['updated'] = $validData['updated'];
                 $data2['language'] = $validData['language'];
                 $data2['rules'] = $validData['rules'];
+                $data2['catid'] = $validData['catid'];
 
                 if (!$log->bind($data2))
                 {
@@ -350,51 +370,10 @@ class ImcControllerIssueForm extends ImcController {
                 $dispatcher->trigger( 'onAfterCategoryModified', array( $model, $validData, $insertid ) ); 
             }
 
+            $dispatcher = JEventDispatcher::getInstance();
+            $results = $dispatcher->trigger( 'onAfterIssueUpdated', array( $model, $validData, $validData['id'] ) );            
 
         }    
-
-
-        //B: move any images only if record is new
-        if($validData['id'] == 0){
-            //check if any files uploaded
-            $obj = json_decode( $validData['photo'] );
-            if(empty($obj->files))
-                return;
-
-            $srcDir = JPATH_ROOT . '/' . $obj->imagedir . '/' . $obj->id;
-            $dstDir = JPATH_ROOT . '/' . $obj->imagedir . '/' . $insertid;
-            $success = rename ( $srcDir , $dstDir );
-
-            if($success){
-                //update photo json isnew, id
-                unset($obj->isnew);
-
-                //update files url
-                foreach ($obj->files as &$file)
-                {
-                    $file->url = str_replace($obj->id, $insertid, $file->url);
-                    $file->mediumUrl = str_replace($obj->id, $insertid, $file->mediumUrl);
-                    $file->thumbnailUrl = str_replace($obj->id, $insertid, $file->thumbnailUrl);
-                }
-                //update id
-                $obj->id = $insertid;
-
-                $photo = json_encode($obj);
-
-                // Create an object for the record we are going to update.
-                $object = new stdClass();
-                $object->id = $insertid;
-                $object->photo = $photo;
-                // Update photo
-                $result = JFactory::getDbo()->updateObject('#__imc_issues', $object, 'id');
-
-            }
-            else {
-                JFactory::getApplication()->enqueueMessage('Cannot move '.$srcDir.' to '.$dstDir.'. Check folder rights', 'error'); 
-            }
-
-        }
-
 
     }
 }

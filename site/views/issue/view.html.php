@@ -65,6 +65,10 @@ class ImcViewIssue extends JViewLegacy {
         }
 
         $this->_prepareDocument();
+        
+        //update hits
+		$model = $this->getModel();
+        $model->hit();
 
         parent::display($tpl);
     }
@@ -120,6 +124,7 @@ class ImcViewIssue extends JViewLegacy {
             $this->document->addScript(JURI::root(true).'/components/com_imc/assets/js/jquery-comments.min.js');
         }
 
+        //JText::script('COM_IMC_COMMENTS_NO_COMMENTS');
     }
 
 }

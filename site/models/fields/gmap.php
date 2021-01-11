@@ -201,14 +201,14 @@ class JFormFieldGmap extends JFormField
 		$script[] = "var scrollwheel='".$scrollwheel."';";
 		$script[] = "var icon='".$this->icon."';";
 		$script[] = "var language='".$language."';";
-		$script[] = "var hiddenterm='".$hiddenterm."';";
+		$script[] = "var hiddenterm='".addslashes($hiddenterm)."';";
 		if(!is_null($boundaries))
 		{
 			$script[] = "var boundaries=JSON.parse('" . $boundaries . "');";
 		}
 		$script[] = "var info='".addslashes(JText::_('COM_IMC_DRAG_MARKER'))."';";
-		$script[] = "var info_unlock='".JText::_('COM_IMC_UNLOCK_ADDRESS')."';";
-		$script[] = "var notfound='".JText::_('COM_IMC_ADDRESS_NOT_FOUND')."';";
+		$script[] = "var info_unlock='".addslashes(JText::_('COM_IMC_UNLOCK_ADDRESS'))."';";
+		$script[] = "var notfound='".addslashes(JText::_('COM_IMC_ADDRESS_NOT_FOUND'))."';";
 		JFactory::getDocument()->addScriptDeclaration(implode("\n", $script));
 
 		//initialize map
@@ -226,9 +226,7 @@ class JFormFieldGmap extends JFormField
 		$html = array();
 
 		if($this->mapOnly){
-			$html[] = '<div style="'.implode("", $style).'display:block;clear:both;">';
 			$html[] = '	<div id="imc-map-canvas"></div>';
-			$html[] = '</div>';
 			return implode("\n", $html);
 		}
 

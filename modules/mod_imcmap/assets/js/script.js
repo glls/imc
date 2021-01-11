@@ -20,11 +20,11 @@ function imc_mod_map_initialize(img_path) {
         for (var i = 0; i < boundaries.length; i++) {
             var bounds = new google.maps.Polygon({
                 paths: boundaries,
-                strokeColor: '#FF0000',
+                strokeColor: '#000000',
                 strokeOpacity: 0.8,
                 strokeWeight: 2,
                 fillColor: '#FF0000',
-                fillOpacity: 0.05
+                fillOpacity: 0
             });
             bounds.setMap(imc_mod_map);
         }
@@ -37,11 +37,11 @@ function imc_mod_map_initialize(img_path) {
         panelFocusReset();
     });
 
-    js("div[id^='imc-panel-']").mouseenter(function(e){
+    jQuery("div[id^='imc-panel-']").mouseenter(function(e){
         markerBounce( this.id.substring(10) );
     });
 
-    js("div[id^='imc-panel-']").mouseleave(function(e){
+    jQuery("div[id^='imc-panel-']").mouseleave(function(e){
         markerIdle( this.id.substring(10) );
     });
 }
@@ -75,10 +75,10 @@ function setMarkers(center, map, img_path) {
 
                     // Create image object, to set max size
                     var icon = {
-                        url: img,
-                        scaledSize: new google.maps.Size(32, 37),
-                        origin: new google.maps.Point(0, 0),
-                        anchor: new google.maps.Point(0, 0)
+                        url: img
+                        //scaledSize: new google.maps.Size(32, 37),
+                        //origin: new google.maps.Point(0, 0),
+                        //anchor: new google.maps.Point(0, 0)
                     };
 
                     // Create marker and putting it on the map
